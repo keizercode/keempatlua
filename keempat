@@ -1,240 +1,333 @@
--- Training Points Multiplier GUI (Fixed Version)
--- Compatible with Delta Executor
+-- Training Points Multiplier - AGGRESSIVE HOOK VERSION
+-- Based on working hook methods
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 
--- Konfigurasi
-local MULTIPLIER = 694
-local TARGET_POINTS = 1000000
-local autoTrainEnabled = false
-local scriptActive = false
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Settings
+local Settings = {
+    GainMultiplier = 694,
+    AutoTrain = false,
+    Enabled = false
+}
+
+local Stats = {
+    TotalGains = 0,
+    TrainingSessions = 0
+}
 
 -- Create GUI
 local ScreenGui = Instance.new("ScreenGui")
-local MainFrame = Instance.new("Frame")
-local TopBar = Instance.new("Frame")
-local Title = Instance.new("TextLabel")
-local MinimizeBtn = Instance.new("TextButton")
-local ContentFrame = Instance.new("Frame")
-local StatusLabel = Instance.new("TextLabel")
-local MultiplierLabel = Instance.new("TextLabel")
-local MultiplierInput = Instance.new("TextBox")
-local SetMultiplierBtn = Instance.new("TextButton")
-local StartBtn = Instance.new("TextButton")
-local BoostBtn = Instance.new("TextButton")
-local InfoLabel = Instance.new("TextLabel")
-local MinimizedBtn = Instance.new("TextButton")
-
--- Properties
 ScreenGui.Name = "TrainingMultiplierGUI"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- Coba parent ke CoreGui, jika gagal gunakan PlayerGui
-local success = pcall(function()
+pcall(function()
     ScreenGui.Parent = game:GetService("CoreGui")
 end)
-if not success then
-    ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+if not ScreenGui.Parent then
+    ScreenGui.Parent = playerGui
 end
 
--- Main Frame
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 320, 0, 300)
-MainFrame.Position = UDim2.new(0.5, -160, 0.5, -150)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 380, 0, 360)
+MainFrame.Position = UDim2.new(0.5, -190, 0.5, -180)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 8)
+MainCorner.CornerRadius = UDim.new(0, 12)
 MainCorner.Parent = MainFrame
 
--- Top Bar
-TopBar.Name = "TopBar"
-TopBar.Size = UDim2.new(1, 0, 0, 35)
-TopBar.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(100, 150, 255)
+MainStroke.Thickness = 2
+MainStroke.Parent = MainFrame
+
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 50)
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
 TopBar.BorderSizePixel = 0
 TopBar.Parent = MainFrame
 
-local TopCorner = Instance.new("UICorner")
-TopCorner.CornerRadius = UDim.new(0, 8)
-TopCorner.Parent = TopBar
+local TopBarCorner = Instance.new("UICorner")
+TopBarCorner.CornerRadius = UDim.new(0, 12)
+TopBarCorner.Parent = TopBar
 
--- Title
-Title.Name = "Title"
-Title.Size = UDim2.new(1, -40, 1, 0)
-Title.Position = UDim2.new(0, 10, 0, 0)
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -70, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "Training Multiplier"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 16
+Title.Text = "⚡ Training Multiplier"
+Title.TextColor3 = Color3.fromRGB(100, 200, 255)
+Title.TextSize = 20
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TopBar
 
--- Minimize Button
-MinimizeBtn.Name = "MinimizeBtn"
-MinimizeBtn.Size = UDim2.new(0, 30, 0, 30)
-MinimizeBtn.Position = UDim2.new(1, -35, 0, 2.5)
-MinimizeBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-MinimizeBtn.Text = "-"
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Size = UDim2.new(0, 32, 0, 32)
+MinimizeBtn.Position = UDim2.new(1, -67, 0, 9)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+MinimizeBtn.Text = "−"
 MinimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinimizeBtn.TextSize = 20
+MinimizeBtn.TextSize = 22
 MinimizeBtn.Font = Enum.Font.GothamBold
 MinimizeBtn.BorderSizePixel = 0
 MinimizeBtn.Parent = TopBar
 
 local MinCorner = Instance.new("UICorner")
-MinCorner.CornerRadius = UDim.new(0, 6)
+MinCorner.CornerRadius = UDim.new(0, 8)
 MinCorner.Parent = MinimizeBtn
 
--- Content Frame
-ContentFrame.Name = "ContentFrame"
-ContentFrame.Size = UDim2.new(1, -20, 1, -45)
-ContentFrame.Position = UDim2.new(0, 10, 0, 40)
-ContentFrame.BackgroundTransparency = 1
-ContentFrame.Parent = MainFrame
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 32, 0, 32)
+CloseBtn.Position = UDim2.new(1, -33, 0, 9)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 18
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Parent = TopBar
 
--- Status Label
-StatusLabel.Name = "StatusLabel"
-StatusLabel.Size = UDim2.new(1, 0, 0, 25)
-StatusLabel.Position = UDim2.new(0, 0, 0, 5)
-StatusLabel.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-StatusLabel.Text = "Status: Ready"
-StatusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
-StatusLabel.TextSize = 14
-StatusLabel.Font = Enum.Font.Gotham
-StatusLabel.BorderSizePixel = 0
-StatusLabel.Parent = ContentFrame
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = CloseBtn
+
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1, -24, 1, -62)
+Content.Position = UDim2.new(0, 12, 0, 55)
+Content.BackgroundTransparency = 1
+Content.Parent = MainFrame
+
+-- Status Frame
+local StatusFrame = Instance.new("Frame")
+StatusFrame.Size = UDim2.new(1, 0, 0, 80)
+StatusFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
+StatusFrame.BorderSizePixel = 0
+StatusFrame.Parent = Content
 
 local StatusCorner = Instance.new("UICorner")
-StatusCorner.CornerRadius = UDim.new(0, 6)
-StatusCorner.Parent = StatusLabel
+StatusCorner.CornerRadius = UDim.new(0, 10)
+StatusCorner.Parent = StatusFrame
 
--- Multiplier Label
-MultiplierLabel.Name = "MultiplierLabel"
-MultiplierLabel.Size = UDim2.new(1, 0, 0, 20)
-MultiplierLabel.Position = UDim2.new(0, 0, 0, 38)
-MultiplierLabel.BackgroundTransparency = 1
-MultiplierLabel.Text = "Multiplier Value:"
-MultiplierLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-MultiplierLabel.TextSize = 13
-MultiplierLabel.Font = Enum.Font.Gotham
-MultiplierLabel.TextXAlignment = Enum.TextXAlignment.Left
-MultiplierLabel.Parent = ContentFrame
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, -16, 0, 28)
+StatusLabel.Position = UDim2.new(0, 8, 0, 8)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Status: INACTIVE"
+StatusLabel.TextColor3 = Color3.fromRGB(255, 150, 100)
+StatusLabel.TextSize = 16
+StatusLabel.Font = Enum.Font.GothamBold
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+StatusLabel.Parent = StatusFrame
 
--- Multiplier Input
-MultiplierInput.Name = "MultiplierInput"
-MultiplierInput.Size = UDim2.new(0.6, 0, 0, 32)
-MultiplierInput.Position = UDim2.new(0, 0, 0, 60)
-MultiplierInput.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-MultiplierInput.Text = tostring(MULTIPLIER)
-MultiplierInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-MultiplierInput.TextSize = 14
-MultiplierInput.Font = Enum.Font.Gotham
-MultiplierInput.PlaceholderText = "Enter multiplier"
-MultiplierInput.BorderSizePixel = 0
-MultiplierInput.ClearTextOnFocus = false
-MultiplierInput.Parent = ContentFrame
+local StatsLabel = Instance.new("TextLabel")
+StatsLabel.Size = UDim2.new(1, -16, 0, 20)
+StatsLabel.Position = UDim2.new(0, 8, 0, 38)
+StatsLabel.BackgroundTransparency = 1
+StatsLabel.Text = "💎 Multiplier: x694 | Gain: +180 → +125K"
+StatsLabel.TextColor3 = Color3.fromRGB(150, 255, 150)
+StatsLabel.TextSize = 13
+StatsLabel.Font = Enum.Font.GothamMedium
+StatsLabel.TextXAlignment = Enum.TextXAlignment.Left
+StatsLabel.Parent = StatusFrame
 
-local InputCorner = Instance.new("UICorner")
-InputCorner.CornerRadius = UDim.new(0, 6)
-InputCorner.Parent = MultiplierInput
+local SessionLabel = Instance.new("TextLabel")
+SessionLabel.Size = UDim2.new(1, -16, 0, 18)
+SessionLabel.Position = UDim2.new(0, 8, 0, 58)
+SessionLabel.BackgroundTransparency = 1
+SessionLabel.Text = "🎯 Sessions: 0 | Total Boosted: +0"
+SessionLabel.TextColor3 = Color3.fromRGB(180, 180, 200)
+SessionLabel.TextSize = 11
+SessionLabel.Font = Enum.Font.Gotham
+SessionLabel.TextXAlignment = Enum.TextXAlignment.Left
+SessionLabel.Parent = StatusFrame
 
--- Set Multiplier Button
-SetMultiplierBtn.Name = "SetMultiplierBtn"
-SetMultiplierBtn.Size = UDim2.new(0.35, 0, 0, 32)
-SetMultiplierBtn.Position = UDim2.new(0.65, 0, 0, 60)
-SetMultiplierBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 255)
-SetMultiplierBtn.Text = "SET"
-SetMultiplierBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-SetMultiplierBtn.TextSize = 14
-SetMultiplierBtn.Font = Enum.Font.GothamBold
-SetMultiplierBtn.BorderSizePixel = 0
-SetMultiplierBtn.Parent = ContentFrame
+-- Multiplier Section
+local MultFrame = Instance.new("Frame")
+MultFrame.Size = UDim2.new(1, 0, 0, 100)
+MultFrame.Position = UDim2.new(0, 0, 0, 88)
+MultFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
+MultFrame.BorderSizePixel = 0
+MultFrame.Parent = Content
 
-local SetBtnCorner = Instance.new("UICorner")
-SetBtnCorner.CornerRadius = UDim.new(0, 6)
-SetBtnCorner.Parent = SetMultiplierBtn
+local MultCorner = Instance.new("UICorner")
+MultCorner.CornerRadius = UDim.new(0, 10)
+MultCorner.Parent = MultFrame
 
--- Start Script Button
-StartBtn.Name = "StartBtn"
-StartBtn.Size = UDim2.new(1, 0, 0, 38)
-StartBtn.Position = UDim2.new(0, 0, 0, 102)
-StartBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 100)
-StartBtn.Text = "START SCRIPT"
-StartBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-StartBtn.TextSize = 15
-StartBtn.Font = Enum.Font.GothamBold
-StartBtn.BorderSizePixel = 0
-StartBtn.Parent = ContentFrame
+local MultTitle = Instance.new("TextLabel")
+MultTitle.Size = UDim2.new(1, -16, 0, 30)
+MultTitle.Position = UDim2.new(0, 8, 0, 6)
+MultTitle.BackgroundTransparency = 1
+MultTitle.Text = "⚡ MULTIPLIER: x694"
+MultTitle.TextColor3 = Color3.fromRGB(255, 255, 150)
+MultTitle.TextSize = 16
+MultTitle.Font = Enum.Font.GothamBold
+MultTitle.TextXAlignment = Enum.TextXAlignment.Left
+MultTitle.Parent = MultFrame
 
-local StartCorner = Instance.new("UICorner")
-StartCorner.CornerRadius = UDim.new(0, 6)
-StartCorner.Parent = StartBtn
+local MultInfo = Instance.new("TextLabel")
+MultInfo.Size = UDim2.new(1, -16, 0, 20)
+MultInfo.Position = UDim2.new(0, 8, 0, 34)
+MultInfo.BackgroundTransparency = 1
+MultInfo.Text = "Slide to adjust (100 - 5000)"
+MultInfo.TextColor3 = Color3.fromRGB(200, 200, 220)
+MultInfo.TextSize = 12
+MultInfo.Font = Enum.Font.Gotham
+MultInfo.TextXAlignment = Enum.TextXAlignment.Left
+MultInfo.Parent = MultFrame
 
--- Boost Button
-BoostBtn.Name = "BoostBtn"
-BoostBtn.Size = UDim2.new(1, 0, 0, 38)
-BoostBtn.Position = UDim2.new(0, 0, 0, 150)
-BoostBtn.BackgroundColor3 = Color3.fromRGB(255, 150, 50)
-BoostBtn.Text = "Boost Training Now"
-BoostBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-BoostBtn.TextSize = 15
-BoostBtn.Font = Enum.Font.GothamBold
-BoostBtn.BorderSizePixel = 0
-BoostBtn.Parent = ContentFrame
+local MultSlider = Instance.new("Frame")
+MultSlider.Size = UDim2.new(1, -16, 0, 34)
+MultSlider.Position = UDim2.new(0, 8, 0, 58)
+MultSlider.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
+MultSlider.BorderSizePixel = 0
+MultSlider.Parent = MultFrame
 
-local BoostCorner = Instance.new("UICorner")
-BoostCorner.CornerRadius = UDim.new(0, 6)
-BoostCorner.Parent = BoostBtn
+local MultSliderCorner = Instance.new("UICorner")
+MultSliderCorner.CornerRadius = UDim.new(0, 8)
+MultSliderCorner.Parent = MultSlider
 
--- Info Label
-InfoLabel.Name = "InfoLabel"
-InfoLabel.Size = UDim2.new(1, 0, 0, 50)
-InfoLabel.Position = UDim2.new(0, 0, 0, 198)
-InfoLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-InfoLabel.Text = "1. Set multiplier\n2. Click START SCRIPT\n3. Press E to train"
-InfoLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-InfoLabel.TextSize = 11
-InfoLabel.Font = Enum.Font.Gotham
-InfoLabel.TextWrapped = true
-InfoLabel.BorderSizePixel = 0
-InfoLabel.Parent = ContentFrame
+local MultFill = Instance.new("Frame")
+MultFill.Size = UDim2.new(0.12, 0, 1, 0)
+MultFill.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+MultFill.BorderSizePixel = 0
+MultFill.Parent = MultSlider
 
-local InfoCorner = Instance.new("UICorner")
-InfoCorner.CornerRadius = UDim.new(0, 6)
-InfoCorner.Parent = InfoLabel
+local MultFillCorner = Instance.new("UICorner")
+MultFillCorner.CornerRadius = UDim.new(0, 8)
+MultFillCorner.Parent = MultFill
 
--- Minimized Button
-MinimizedBtn.Name = "MinimizedBtn"
-MinimizedBtn.Size = UDim2.new(0, 150, 0, 35)
-MinimizedBtn.Position = UDim2.new(1, -160, 0, 10)
-MinimizedBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-MinimizedBtn.Text = "Training Multiplier"
-MinimizedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinimizedBtn.TextSize = 13
-MinimizedBtn.Font = Enum.Font.GothamBold
-MinimizedBtn.BorderSizePixel = 0
-MinimizedBtn.Visible = false
-MinimizedBtn.Parent = ScreenGui
+local MultBtn = Instance.new("TextButton")
+MultBtn.Size = UDim2.new(1, 0, 1, 0)
+MultBtn.BackgroundTransparency = 1
+MultBtn.Text = ""
+MultBtn.Parent = MultSlider
 
-local MinimizedCorner = Instance.new("UICorner")
-MinimizedCorner.CornerRadius = UDim.new(0, 6)
-MinimizedCorner.Parent = MinimizedBtn
+local MultValue = Instance.new("TextLabel")
+MultValue.Size = UDim2.new(1, 0, 1, 0)
+MultValue.BackgroundTransparency = 1
+MultValue.Text = "x694"
+MultValue.TextColor3 = Color3.fromRGB(255, 255, 255)
+MultValue.TextSize = 14
+MultValue.Font = Enum.Font.GothamBold
+MultValue.Parent = MultSlider
 
--- Functions
-local function updateStatus(text, color)
-    StatusLabel.Text = "Status: " .. text
-    StatusLabel.TextColor3 = color
+-- Buttons
+local EnableBtn = Instance.new("TextButton")
+EnableBtn.Size = UDim2.new(1, 0, 0, 50)
+EnableBtn.Position = UDim2.new(0, 0, 0, 196)
+EnableBtn.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+EnableBtn.Text = "🚀 ACTIVATE SCRIPT"
+EnableBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+EnableBtn.TextSize = 18
+EnableBtn.Font = Enum.Font.GothamBold
+EnableBtn.BorderSizePixel = 0
+EnableBtn.Parent = Content
+
+local EnableCorner = Instance.new("UICorner")
+EnableCorner.CornerRadius = UDim.new(0, 10)
+EnableCorner.Parent = EnableBtn
+
+local EnableStroke = Instance.new("UIStroke")
+EnableStroke.Color = Color3.fromRGB(150, 200, 255)
+EnableStroke.Thickness = 2
+EnableStroke.Parent = EnableBtn
+
+local AutoBtn = Instance.new("TextButton")
+AutoBtn.Size = UDim2.new(1, 0, 0, 42)
+AutoBtn.Position = UDim2.new(0, 0, 0, 254)
+AutoBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+AutoBtn.Text = "🤖 AUTO TRAIN: OFF"
+AutoBtn.TextColor3 = Color3.fromRGB(200, 200, 220)
+AutoBtn.TextSize = 15
+AutoBtn.Font = Enum.Font.GothamBold
+AutoBtn.BorderSizePixel = 0
+AutoBtn.Parent = Content
+
+local AutoCorner = Instance.new("UICorner")
+AutoCorner.CornerRadius = UDim.new(0, 10)
+AutoCorner.Parent = AutoBtn
+
+-- Minimized Frame
+local MinimizedFrame = Instance.new("Frame")
+MinimizedFrame.Size = UDim2.new(0, 220, 0, 50)
+MinimizedFrame.Position = UDim2.new(0.5, -110, 0, 10)
+MinimizedFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
+MinimizedFrame.BorderSizePixel = 0
+MinimizedFrame.Visible = false
+MinimizedFrame.Active = true
+MinimizedFrame.Draggable = true
+MinimizedFrame.Parent = ScreenGui
+
+local MinFrameCorner = Instance.new("UICorner")
+MinFrameCorner.CornerRadius = UDim.new(0, 10)
+MinFrameCorner.Parent = MinimizedFrame
+
+local MinStroke = Instance.new("UIStroke")
+MinStroke.Color = Color3.fromRGB(100, 150, 255)
+MinStroke.Thickness = 2
+MinStroke.Parent = MinimizedFrame
+
+local MinLabel = Instance.new("TextLabel")
+MinLabel.Size = UDim2.new(1, -50, 1, 0)
+MinLabel.Position = UDim2.new(0, 12, 0, 0)
+MinLabel.BackgroundTransparency = 1
+MinLabel.Text = "⚡ Training Multiplier"
+MinLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
+MinLabel.TextSize = 16
+MinLabel.Font = Enum.Font.GothamBold
+MinLabel.TextXAlignment = Enum.TextXAlignment.Left
+MinLabel.Parent = MinimizedFrame
+
+local RestoreBtn = Instance.new("TextButton")
+RestoreBtn.Size = UDim2.new(0, 38, 0, 38)
+RestoreBtn.Position = UDim2.new(1, -44, 0, 6)
+RestoreBtn.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+RestoreBtn.Text = "+"
+RestoreBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+RestoreBtn.TextSize = 24
+RestoreBtn.Font = Enum.Font.GothamBold
+RestoreBtn.BorderSizePixel = 0
+RestoreBtn.Parent = MinimizedFrame
+
+local RestoreCorner = Instance.new("UICorner")
+RestoreCorner.CornerRadius = UDim.new(0, 10)
+RestoreCorner.Parent = RestoreBtn
+
+-- Helper Functions
+local function FormatNumber(n)
+    if n >= 1e9 then return string.format("%.2fB", n / 1e9)
+    elseif n >= 1e6 then return string.format("%.2fM", n / 1e6)
+    elseif n >= 1e3 then return string.format("%.1fK", n / 1e3)
+    else return tostring(math.floor(n)) end
 end
 
-local function notif(text)
+local function UpdateUI()
+    MultTitle.Text = string.format("⚡ MULTIPLIER: x%d", Settings.GainMultiplier)
+    MultValue.Text = string.format("x%d", Settings.GainMultiplier)
+    
+    local result = 180 * Settings.GainMultiplier
+    MultInfo.Text = string.format("+180 becomes +%s", FormatNumber(result))
+    
+    MultFill.Size = UDim2.new((Settings.GainMultiplier - 100) / 4900, 0, 1, 0)
+    
+    StatsLabel.Text = string.format("💎 Multiplier: x%d | Gain: +180 → +%s", 
+        Settings.GainMultiplier, FormatNumber(result))
+    SessionLabel.Text = string.format("🎯 Sessions: %d | Total Boosted: +%s", 
+        Stats.TrainingSessions, FormatNumber(Stats.TotalGains))
+end
+
+local function Notify(text)
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "Training Multiplier",
         Text = text,
@@ -242,123 +335,203 @@ local function notif(text)
     })
 end
 
--- Training Boost Function
-local function boostTraining()
-    if not scriptActive then
-        notif("Please START SCRIPT first!")
-        return
-    end
-    
-    spawn(function()
-        pcall(function()
-            local TrainSpeedRemote = ReplicatedStorage:FindFirstChild("TrainSystem")
-            if TrainSpeedRemote then
-                TrainSpeedRemote = TrainSpeedRemote:FindFirstChild("Remote")
-                if TrainSpeedRemote then
-                    TrainSpeedRemote = TrainSpeedRemote:FindFirstChild("TrainSpeedHasChanged")
-                    if TrainSpeedRemote then
-                        -- Fire training speed dengan multiplier
-                        for i = 1, MULTIPLIER do
-                            TrainSpeedRemote:FireServer(4)
-                            task.wait(0.01)
-                        end
-                        updateStatus("Training Boosted!", Color3.fromRGB(100, 255, 100))
-                        notif("Training speed boosted x" .. MULTIPLIER)
-                        task.wait(2)
-                        updateStatus("Active", Color3.fromRGB(100, 255, 100))
-                    end
-                end
-            end
-        end)
-    end)
-end
+-- Slider Logic
+local dragging = false
+MultBtn.MouseButton1Down:Connect(function() 
+    dragging = true 
+end)
 
--- Start Script Function
-local function startScript()
-    scriptActive = not scriptActive
-    
-    if scriptActive then
-        StartBtn.Text = "STOP SCRIPT"
-        StartBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
-        updateStatus("Active", Color3.fromRGB(100, 255, 100))
-        notif("Script activated! Press E to train")
-        
-        -- Auto hook training when E is pressed
-        local connection
-        connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-            if scriptActive and not gameProcessed and input.KeyCode == Enum.KeyCode.E then
-                task.wait(0.1)
-                boostTraining()
-            end
-        end)
-        
-        -- Store connection untuk cleanup
-        getgenv().TrainingConnection = connection
-        
-    else
-        StartBtn.Text = "START SCRIPT"
-        StartBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 100)
-        updateStatus("Stopped", Color3.fromRGB(255, 100, 100))
-        notif("Script deactivated")
-        
-        -- Disconnect
-        if getgenv().TrainingConnection then
-            getgenv().TrainingConnection:Disconnect()
-            getgenv().TrainingConnection = nil
-        end
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
     end
-end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local pos = math.clamp((UserInputService:GetMouseLocation().X - MultSlider.AbsolutePosition.X) / MultSlider.AbsoluteSize.X, 0, 1)
+        Settings.GainMultiplier = math.clamp(math.floor(pos * 4900) + 100, 100, 5000)
+        UpdateUI()
+    end
+end)
 
 -- Button Events
 MinimizeBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = false
-    MinimizedBtn.Visible = true
+    MinimizedFrame.Visible = true
 end)
 
-MinimizedBtn.MouseButton1Click:Connect(function()
+RestoreBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = true
-    MinimizedBtn.Visible = false
+    MinimizedFrame.Visible = false
 end)
 
-SetMultiplierBtn.MouseButton1Click:Connect(function()
-    local value = tonumber(MultiplierInput.Text)
-    if value and value > 0 and value <= 10000 then
-        MULTIPLIER = math.floor(value)
-        MultiplierInput.Text = tostring(MULTIPLIER)
-        TARGET_POINTS = math.floor(1440 * MULTIPLIER)
-        
-        local displayPoints = TARGET_POINTS >= 1000000 
-            and string.format("%.1fM", TARGET_POINTS/1000000) 
-            or string.format("%.1fK", TARGET_POINTS/1000)
-        
-        InfoLabel.Text = string.format("Target: %s per train\nMultiplier: x%d\nPress E to train", displayPoints, MULTIPLIER)
-        updateStatus("Multiplier Set!", Color3.fromRGB(100, 255, 100))
-        notif("Multiplier set to x" .. MULTIPLIER)
-        task.wait(1.5)
-        if scriptActive then
-            updateStatus("Active", Color3.fromRGB(100, 255, 100))
-        else
-            updateStatus("Ready", Color3.fromRGB(255, 200, 100))
-        end
+CloseBtn.MouseButton1Click:Connect(function()
+    if Settings.Enabled then
+        Notify("Please DEACTIVATE script before closing!")
     else
-        updateStatus("Invalid Value!", Color3.fromRGB(255, 100, 100))
-        notif("Enter value 1-10000")
-        task.wait(1.5)
-        updateStatus("Ready", Color3.fromRGB(255, 200, 100))
+        ScreenGui:Destroy()
     end
 end)
 
-StartBtn.MouseButton1Click:Connect(startScript)
+EnableBtn.MouseButton1Click:Connect(function()
+    Settings.Enabled = not Settings.Enabled
+    if Settings.Enabled then
+        EnableBtn.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
+        EnableBtn.Text = "✅ SCRIPT ACTIVE"
+        EnableStroke.Color = Color3.fromRGB(150, 255, 150)
+        StatusLabel.Text = "Status: ACTIVE 🔥"
+        StatusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+        Notify("Script ACTIVATED! Press E to train")
+    else
+        EnableBtn.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+        EnableBtn.Text = "🚀 ACTIVATE SCRIPT"
+        EnableStroke.Color = Color3.fromRGB(150, 200, 255)
+        StatusLabel.Text = "Status: INACTIVE"
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 150, 100)
+        Notify("Script DEACTIVATED")
+    end
+end)
 
-BoostBtn.MouseButton1Click:Connect(boostTraining)
+AutoBtn.MouseButton1Click:Connect(function()
+    Settings.AutoTrain = not Settings.AutoTrain
+    if Settings.AutoTrain then
+        AutoBtn.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+        AutoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        AutoBtn.Text = "🤖 AUTO TRAIN: ON"
+        Notify("Auto Train: ON")
+    else
+        AutoBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+        AutoBtn.TextColor3 = Color3.fromRGB(200, 200, 220)
+        AutoBtn.Text = "🤖 AUTO TRAIN: OFF"
+        Notify("Auto Train: OFF")
+    end
+end)
 
--- Startup
-task.wait(0.5)
-updateStatus("Ready", Color3.fromRGB(255, 200, 100))
-notif("Training Multiplier loaded!")
+-- AGGRESSIVE HOOKING - Core Script Logic
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+    
+    if not Settings.Enabled then
+        return oldNamecall(self, ...)
+    end
+    
+    -- Hook InvokeServer - Multiply results
+    if method == "InvokeServer" then
+        local results = {oldNamecall(self, ...)}
+        
+        for i = 1, #results do
+            if typeof(results[i]) == "number" and results[i] > 10 then
+                local original = results[i]
+                results[i] = results[i] * Settings.GainMultiplier
+                Stats.TotalGains = Stats.TotalGains + (results[i] - original)
+            end
+        end
+        
+        return unpack(results)
+    end
+    
+    -- Hook FireServer - Training speed boost
+    if method == "FireServer" then
+        if self.Name == "TrainSpeedHasChanged" and args[1] then
+            args[1] = args[1] * 10 -- Speed boost
+            Stats.TrainingSessions = Stats.TrainingSessions + 1
+            task.spawn(UpdateUI)
+        end
+        return oldNamecall(self, unpack(args))
+    end
+    
+    return oldNamecall(self, ...)
+end))
 
-print("=================================")
-print("Training Multiplier GUI Loaded!")
-print("Version: 2.0 (Fixed)")
-print("Default Multiplier: " .. MULTIPLIER)
-print("=================================")
+-- Hook BindableFunction.Invoke
+task.spawn(function()
+    task.wait(2)
+    for _, service in pairs({ReplicatedStorage, workspace}) do
+        for _, descendant in pairs(service:GetDescendants()) do
+            if descendant:IsA("BindableFunction") then
+                pcall(function()
+                    local oldInvoke = descendant.Invoke
+                    descendant.Invoke = newcclosure(function(self, ...)
+                        local result = oldInvoke(self, ...)
+                        
+                        if Settings.Enabled and typeof(result) == "number" and result > 10 then
+                            return result * Settings.GainMultiplier
+                        end
+                        
+                        return result
+                    end)
+                end)
+            end
+        end
+    end
+end)
+
+-- Hook TrainSystem specifically
+task.spawn(function()
+    local TrainSystem = ReplicatedStorage:WaitForChild("TrainSystem", 10)
+    if TrainSystem then
+        -- Hook PlayerTrainValueHasChanged
+        local trainChanged = TrainSystem.Remote:FindFirstChild("PlayerTrainValueHasChanged")
+        if trainChanged then
+            trainChanged.OnClientEvent:Connect(function(plr, trainType, newVal, oldVal)
+                if Settings.Enabled and newVal and oldVal and plr == player then
+                    local boosted = (newVal - oldVal) * (Settings.GainMultiplier - 1)
+                    Stats.TotalGains = Stats.TotalGains + boosted
+                    task.spawn(UpdateUI)
+                    
+                    print(string.format("[BOOST] Type %d: +%d → +%s", 
+                        trainType, newVal - oldVal, FormatNumber((newVal - oldVal) * Settings.GainMultiplier)))
+                end
+            end)
+        end
+        
+        -- Hook GetTrainValue
+        local getTrainValue = TrainSystem.Bindable:FindFirstChild("GetTrainValue")
+        if getTrainValue then
+            local old = getTrainValue.Invoke
+            getTrainValue.Invoke = newcclosure(function(self, ...)
+                local val = old(self, ...)
+                if Settings.Enabled and typeof(val) == "number" then
+                    return val * Settings.GainMultiplier
+                end
+                return val
+            end)
+        end
+    end
+end)
+
+-- Auto Train Loop
+task.spawn(function()
+    while task.wait(0.15) do
+        if Settings.AutoTrain and Settings.Enabled then
+            pcall(function()
+                local TrainEquip = ReplicatedStorage:FindFirstChild("TrainEquipment")
+                if TrainEquip and TrainEquip:FindFirstChild("Remote") then
+                    local stationary = TrainEquip.Remote:FindFirstChild("ApplyStationaryTrain")
+                    if stationary then
+                        stationary:InvokeServer()
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- Initialize
+UpdateUI()
+Notify("Script loaded! Set multiplier and ACTIVATE")
+
+print("==========================================")
+print("⚡ Training Multiplier - LOADED!")
+print("==========================================")
+print(string.format("💎 Current Multiplier: x%d", Settings.GainMultiplier))
+print(string.format("📊 Gain: +180 → +%s", FormatNumber(180 * Settings.GainMultiplier)))
+print("==========================================")
+print("1. Adjust multiplier slider")
+print("2. Click ACTIVATE SCRIPT")
+print("3. Press E to train")
+print("4. Watch gains multiply!")
+print("==========================================")
