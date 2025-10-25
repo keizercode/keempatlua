@@ -1,5 +1,5 @@
--- Training Points Multiplier GUI
--- Simple, Functional, with Minimize
+-- Training Points Multiplier GUI (Fixed Version)
+-- Compatible with Delta Executor
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
@@ -9,8 +9,8 @@ local UserInputService = game:GetService("UserInputService")
 -- Konfigurasi
 local MULTIPLIER = 694
 local TARGET_POINTS = 1000000
-local trainingActive = false
 local autoTrainEnabled = false
+local scriptActive = false
 
 -- Create GUI
 local ScreenGui = Instance.new("ScreenGui")
@@ -23,7 +23,7 @@ local StatusLabel = Instance.new("TextLabel")
 local MultiplierLabel = Instance.new("TextLabel")
 local MultiplierInput = Instance.new("TextBox")
 local SetMultiplierBtn = Instance.new("TextButton")
-local AutoTrainBtn = Instance.new("TextButton")
+local StartBtn = Instance.new("TextButton")
 local BoostBtn = Instance.new("TextButton")
 local InfoLabel = Instance.new("TextLabel")
 local MinimizedBtn = Instance.new("TextButton")
@@ -31,19 +31,25 @@ local MinimizedBtn = Instance.new("TextButton")
 -- Properties
 ScreenGui.Name = "TrainingMultiplierGUI"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = game.CoreGui
+
+-- Coba parent ke CoreGui, jika gagal gunakan PlayerGui
+local success = pcall(function()
+    ScreenGui.Parent = game:GetService("CoreGui")
+end)
+if not success then
+    ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+end
 
 -- Main Frame
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 320, 0, 280)
-MainFrame.Position = UDim2.new(0.5, -160, 0.5, -140)
+MainFrame.Size = UDim2.new(0, 320, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -160, 0.5, -150)
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
--- Corner
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 8)
 MainCorner.Parent = MainFrame
@@ -99,8 +105,8 @@ StatusLabel.Name = "StatusLabel"
 StatusLabel.Size = UDim2.new(1, 0, 0, 25)
 StatusLabel.Position = UDim2.new(0, 0, 0, 5)
 StatusLabel.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-StatusLabel.Text = "Status: Inactive"
-StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+StatusLabel.Text = "Status: Ready"
+StatusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
 StatusLabel.TextSize = 14
 StatusLabel.Font = Enum.Font.Gotham
 StatusLabel.BorderSizePixel = 0
@@ -115,7 +121,7 @@ MultiplierLabel.Name = "MultiplierLabel"
 MultiplierLabel.Size = UDim2.new(1, 0, 0, 20)
 MultiplierLabel.Position = UDim2.new(0, 0, 0, 38)
 MultiplierLabel.BackgroundTransparency = 1
-MultiplierLabel.Text = "Multiplier:"
+MultiplierLabel.Text = "Multiplier Value:"
 MultiplierLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 MultiplierLabel.TextSize = 13
 MultiplierLabel.Font = Enum.Font.Gotham
@@ -124,7 +130,7 @@ MultiplierLabel.Parent = ContentFrame
 
 -- Multiplier Input
 MultiplierInput.Name = "MultiplierInput"
-MultiplierInput.Size = UDim2.new(0.6, 0, 0, 30)
+MultiplierInput.Size = UDim2.new(0.6, 0, 0, 32)
 MultiplierInput.Position = UDim2.new(0, 0, 0, 60)
 MultiplierInput.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
 MultiplierInput.Text = tostring(MULTIPLIER)
@@ -133,6 +139,7 @@ MultiplierInput.TextSize = 14
 MultiplierInput.Font = Enum.Font.Gotham
 MultiplierInput.PlaceholderText = "Enter multiplier"
 MultiplierInput.BorderSizePixel = 0
+MultiplierInput.ClearTextOnFocus = false
 MultiplierInput.Parent = ContentFrame
 
 local InputCorner = Instance.new("UICorner")
@@ -141,7 +148,7 @@ InputCorner.Parent = MultiplierInput
 
 -- Set Multiplier Button
 SetMultiplierBtn.Name = "SetMultiplierBtn"
-SetMultiplierBtn.Size = UDim2.new(0.35, 0, 0, 30)
+SetMultiplierBtn.Size = UDim2.new(0.35, 0, 0, 32)
 SetMultiplierBtn.Position = UDim2.new(0.65, 0, 0, 60)
 SetMultiplierBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 255)
 SetMultiplierBtn.Text = "SET"
@@ -155,28 +162,28 @@ local SetBtnCorner = Instance.new("UICorner")
 SetBtnCorner.CornerRadius = UDim.new(0, 6)
 SetBtnCorner.Parent = SetMultiplierBtn
 
--- Auto Train Button
-AutoTrainBtn.Name = "AutoTrainBtn"
-AutoTrainBtn.Size = UDim2.new(1, 0, 0, 35)
-AutoTrainBtn.Position = UDim2.new(0, 0, 0, 100)
-AutoTrainBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 100)
-AutoTrainBtn.Text = "Auto Train: OFF"
-AutoTrainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-AutoTrainBtn.TextSize = 15
-AutoTrainBtn.Font = Enum.Font.GothamBold
-AutoTrainBtn.BorderSizePixel = 0
-AutoTrainBtn.Parent = ContentFrame
+-- Start Script Button
+StartBtn.Name = "StartBtn"
+StartBtn.Size = UDim2.new(1, 0, 0, 38)
+StartBtn.Position = UDim2.new(0, 0, 0, 102)
+StartBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 100)
+StartBtn.Text = "START SCRIPT"
+StartBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+StartBtn.TextSize = 15
+StartBtn.Font = Enum.Font.GothamBold
+StartBtn.BorderSizePixel = 0
+StartBtn.Parent = ContentFrame
 
-local AutoCorner = Instance.new("UICorner")
-AutoCorner.CornerRadius = UDim.new(0, 6)
-AutoCorner.Parent = AutoTrainBtn
+local StartCorner = Instance.new("UICorner")
+StartCorner.CornerRadius = UDim.new(0, 6)
+StartCorner.Parent = StartBtn
 
 -- Boost Button
 BoostBtn.Name = "BoostBtn"
-BoostBtn.Size = UDim2.new(1, 0, 0, 35)
-BoostBtn.Position = UDim2.new(0, 0, 0, 145)
+BoostBtn.Size = UDim2.new(1, 0, 0, 38)
+BoostBtn.Position = UDim2.new(0, 0, 0, 150)
 BoostBtn.BackgroundColor3 = Color3.fromRGB(255, 150, 50)
-BoostBtn.Text = "Boost Combat Power"
+BoostBtn.Text = "Boost Training Now"
 BoostBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 BoostBtn.TextSize = 15
 BoostBtn.Font = Enum.Font.GothamBold
@@ -189,10 +196,10 @@ BoostCorner.Parent = BoostBtn
 
 -- Info Label
 InfoLabel.Name = "InfoLabel"
-InfoLabel.Size = UDim2.new(1, 0, 0, 40)
-InfoLabel.Position = UDim2.new(0, 0, 0, 190)
+InfoLabel.Size = UDim2.new(1, 0, 0, 50)
+InfoLabel.Position = UDim2.new(0, 0, 0, 198)
 InfoLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-InfoLabel.Text = "Press E to train with multiplier\nTarget: 1M points per train"
+InfoLabel.Text = "1. Set multiplier\n2. Click START SCRIPT\n3. Press E to train"
 InfoLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
 InfoLabel.TextSize = 11
 InfoLabel.Font = Enum.Font.Gotham
@@ -227,74 +234,80 @@ local function updateStatus(text, color)
     StatusLabel.TextColor3 = color
 end
 
-local function modifyTrainingPoints(value)
-    if type(value) == "number" and value > 0 then
-        return math.floor(value * MULTIPLIER)
-    end
-    return value
+local function notif(text)
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Training Multiplier",
+        Text = text,
+        Duration = 3
+    })
 end
 
-local function boostCombatPower()
-    local success, err = pcall(function()
-        local CombatPowerBindable = ReplicatedStorage:WaitForChild("TrainSystem"):WaitForChild("Bindable"):WaitForChild("PlayerCombatPowerHasChanged")
-        local GetCombatPower = ReplicatedStorage:WaitForChild("TrainSystem"):WaitForChild("Bindable"):WaitForChild("GetCombatPower")
-        
-        local currentPower = GetCombatPower:Invoke(LocalPlayer)
-        local boostedPower = math.floor(currentPower * (MULTIPLIER / 10))
-        
-        CombatPowerBindable:Fire(LocalPlayer, boostedPower)
-        updateStatus("Combat Power Boosted!", Color3.fromRGB(100, 255, 100))
-        wait(2)
-        updateStatus("Active", Color3.fromRGB(100, 255, 100))
-    end)
-    
-    if not success then
-        updateStatus("Boost Failed!", Color3.fromRGB(255, 100, 100))
+-- Training Boost Function
+local function boostTraining()
+    if not scriptActive then
+        notif("Please START SCRIPT first!")
+        return
     end
-end
-
-local function enhancedAutoTrain()
-    local success, err = pcall(function()
-        local ApplyStationaryTrain = ReplicatedStorage:WaitForChild("TrainEquipment"):WaitForChild("Remote"):WaitForChild("ApplyStationaryTrain")
-        local TrainSpeedRemote = ReplicatedStorage:WaitForChild("TrainSystem"):WaitForChild("Remote"):WaitForChild("TrainSpeedHasChanged")
-        
-        TrainSpeedRemote:FireServer(4)
-        ApplyStationaryTrain:InvokeServer()
-        
-        updateStatus("Training Started!", Color3.fromRGB(100, 255, 100))
-    end)
     
-    if not success then
-        updateStatus("Training Failed!", Color3.fromRGB(255, 100, 100))
-    end
-end
-
--- Hook Training System
-pcall(function()
-    local StatisticsRemote = ReplicatedStorage:WaitForChild("Statistics"):WaitForChild("Remote"):WaitForChild("StatisticsDataHasChanged")
-    local TrainValueBindable = ReplicatedStorage:WaitForChild("TrainSystem"):WaitForChild("Bindable"):WaitForChild("PlayerTrainValueHasChanged")
-    
-    local oldStatConnect = StatisticsRemote.OnClientEvent.Connect
-    StatisticsRemote.OnClientEvent.Connect = function(self, func)
-        return oldStatConnect(self, function(pointsGained, trainType)
-            local modifiedPoints = modifyTrainingPoints(pointsGained)
-            func(modifiedPoints, trainType)
+    spawn(function()
+        pcall(function()
+            local TrainSpeedRemote = ReplicatedStorage:FindFirstChild("TrainSystem")
+            if TrainSpeedRemote then
+                TrainSpeedRemote = TrainSpeedRemote:FindFirstChild("Remote")
+                if TrainSpeedRemote then
+                    TrainSpeedRemote = TrainSpeedRemote:FindFirstChild("TrainSpeedHasChanged")
+                    if TrainSpeedRemote then
+                        -- Fire training speed dengan multiplier
+                        for i = 1, MULTIPLIER do
+                            TrainSpeedRemote:FireServer(4)
+                            task.wait(0.01)
+                        end
+                        updateStatus("Training Boosted!", Color3.fromRGB(100, 255, 100))
+                        notif("Training speed boosted x" .. MULTIPLIER)
+                        task.wait(2)
+                        updateStatus("Active", Color3.fromRGB(100, 255, 100))
+                    end
+                end
+            end
         end)
-    end
+    end)
+end
+
+-- Start Script Function
+local function startScript()
+    scriptActive = not scriptActive
     
-    local oldTrainValueFire = TrainValueBindable.Fire
-    TrainValueBindable.Fire = function(self, player, trainType, newValue, oldValue)
-        if player == LocalPlayer then
-            local valueDiff = newValue - oldValue
-            local modifiedDiff = modifyTrainingPoints(valueDiff)
-            local modifiedNewValue = oldValue + modifiedDiff
-            return oldTrainValueFire(self, player, trainType, modifiedNewValue, oldValue)
+    if scriptActive then
+        StartBtn.Text = "STOP SCRIPT"
+        StartBtn.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+        updateStatus("Active", Color3.fromRGB(100, 255, 100))
+        notif("Script activated! Press E to train")
+        
+        -- Auto hook training when E is pressed
+        local connection
+        connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+            if scriptActive and not gameProcessed and input.KeyCode == Enum.KeyCode.E then
+                task.wait(0.1)
+                boostTraining()
+            end
+        end)
+        
+        -- Store connection untuk cleanup
+        getgenv().TrainingConnection = connection
+        
+    else
+        StartBtn.Text = "START SCRIPT"
+        StartBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 100)
+        updateStatus("Stopped", Color3.fromRGB(255, 100, 100))
+        notif("Script deactivated")
+        
+        -- Disconnect
+        if getgenv().TrainingConnection then
+            getgenv().TrainingConnection:Disconnect()
+            getgenv().TrainingConnection = nil
         end
-        return oldTrainValueFire(self, player, trainType, newValue, oldValue)
     end
-    
-    updateStatus("Active", Color3.fromRGB(100, 255, 100))
-end)
+end
 
 -- Button Events
 MinimizeBtn.MouseButton1Click:Connect(function()
@@ -309,44 +322,43 @@ end)
 
 SetMultiplierBtn.MouseButton1Click:Connect(function()
     local value = tonumber(MultiplierInput.Text)
-    if value and value > 0 then
-        MULTIPLIER = value
-        TARGET_POINTS = math.floor(1440 * value)
-        InfoLabel.Text = string.format("Press E to train with multiplier\nTarget: %s points per train", 
-            TARGET_POINTS >= 1000000 and string.format("%.1fM", TARGET_POINTS/1000000) or string.format("%.1fK", TARGET_POINTS/1000))
-        updateStatus("Multiplier Updated!", Color3.fromRGB(100, 255, 100))
-        wait(1)
-        updateStatus("Active", Color3.fromRGB(100, 255, 100))
+    if value and value > 0 and value <= 10000 then
+        MULTIPLIER = math.floor(value)
+        MultiplierInput.Text = tostring(MULTIPLIER)
+        TARGET_POINTS = math.floor(1440 * MULTIPLIER)
+        
+        local displayPoints = TARGET_POINTS >= 1000000 
+            and string.format("%.1fM", TARGET_POINTS/1000000) 
+            or string.format("%.1fK", TARGET_POINTS/1000)
+        
+        InfoLabel.Text = string.format("Target: %s per train\nMultiplier: x%d\nPress E to train", displayPoints, MULTIPLIER)
+        updateStatus("Multiplier Set!", Color3.fromRGB(100, 255, 100))
+        notif("Multiplier set to x" .. MULTIPLIER)
+        task.wait(1.5)
+        if scriptActive then
+            updateStatus("Active", Color3.fromRGB(100, 255, 100))
+        else
+            updateStatus("Ready", Color3.fromRGB(255, 200, 100))
+        end
     else
-        updateStatus("Invalid Input!", Color3.fromRGB(255, 100, 100))
-        wait(1)
-        updateStatus("Active", Color3.fromRGB(100, 255, 100))
+        updateStatus("Invalid Value!", Color3.fromRGB(255, 100, 100))
+        notif("Enter value 1-10000")
+        task.wait(1.5)
+        updateStatus("Ready", Color3.fromRGB(255, 200, 100))
     end
 end)
 
-AutoTrainBtn.MouseButton1Click:Connect(function()
-    autoTrainEnabled = not autoTrainEnabled
-    if autoTrainEnabled then
-        AutoTrainBtn.Text = "Auto Train: ON"
-        AutoTrainBtn.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
-        enhancedAutoTrain()
-    else
-        AutoTrainBtn.Text = "Auto Train: OFF"
-        AutoTrainBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 100)
-    end
-end)
+StartBtn.MouseButton1Click:Connect(startScript)
 
-BoostBtn.MouseButton1Click:Connect(function()
-    boostCombatPower()
-end)
+BoostBtn.MouseButton1Click:Connect(boostTraining)
 
--- Auto-activate ketika tekan E
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.KeyCode == Enum.KeyCode.E and autoTrainEnabled then
-        wait(0.05)
-        enhancedAutoTrain()
-    end
-end)
+-- Startup
+task.wait(0.5)
+updateStatus("Ready", Color3.fromRGB(255, 200, 100))
+notif("Training Multiplier loaded!")
 
+print("=================================")
 print("Training Multiplier GUI Loaded!")
-print("Target Points:", TARGET_POINTS)
+print("Version: 2.0 (Fixed)")
+print("Default Multiplier: " .. MULTIPLIER)
+print("=================================")
